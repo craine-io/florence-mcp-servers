@@ -1,0 +1,61 @@
+# Development overrides for docker-compose.yml
+version: '3.8'
+
+services:
+  recipe-api-server:
+    # Override for development - mount source code for live reload
+    volumes:
+      - ./shared:/app/shared
+      - ./servers/recipe_api_server/src:/app/src
+      - ./servers/recipe_api_server/tests:/app/tests
+    environment:
+      - PYTHONDONTWRITEBYTECODE=0  # Allow .pyc files in dev
+      - LOG_LEVEL=DEBUG
+    # Add development port mapping (for future HTTP interface)
+    ports:
+      - "8000:8000"
+
+  postgres:
+    # Expose port for development database access
+    ports:
+      - "5432:5432"
+    # Add development-friendly settings
+    environment:
+      - POSTGRES_PASSWORD=postgres  # Simple password for dev
+
+  redis:
+    # Expose port for development Redis access
+    ports:
+      - "6379:6379"
+    # No password in development
+    command: redis-server --appendonly yes
+
+  # Development tools
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: florence-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@florence.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    depends_on:
+      - postgres
+    networks:
+      - florence-network
+    profiles:
+      - tools
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: florence-redis-commander
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - florence-network
+    profiles:
+      - tools

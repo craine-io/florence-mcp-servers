@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  recipe-api-server:
+    build: 
+      context: .
+      dockerfile: servers/recipe_api_server/Dockerfile
+    container_name: florence-recipe-api
+    environment:
+      - SPOONACULAR_API_KEY=${SPOONACULAR_API_KEY}
+      - EDAMAM_APP_ID=${EDAMAM_APP_ID}
+      - EDAMAM_APP_KEY=${EDAMAM_APP_KEY}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    volumes:
+      # Mount source code for development (hot reload)
+      - ./shared:/app/shared:ro
+      - ./servers/recipe_api_server/src:/app/src:ro
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - florence-network
+
+  # PostgreSQL database (for future use with meal planning, etc.)
+  postgres:
+    image: postgres:15-alpine
+    container_name: florence-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sous_chef}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./shared/database:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - florence-network
+
+  # Redis cache (for future use with caching, sessions)
+  redis:
+    image: redis:7-alpine
+    container_name: florence-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - florence-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  florence-network:
+    driver: bridge

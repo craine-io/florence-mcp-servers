@@ -1,0 +1,6 @@
+# Server-specific requirements (inherits from root requirements.txt)
+-r ../../requirements.txt
+
+# Additional dependencies specific to recipe API server
+beautifulsoup4>=4.12.0  # For web scraping if needed
+lxml>=4.9.0             # XML parser for BeautifulSoup
