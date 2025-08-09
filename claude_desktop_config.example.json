@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "florence-recipe-server": {
+      "command": "python",
+      "args": [
+        "/absolute/path/to/florence-mcp-servers/servers/recipe_api_server/src/main.py"
+      ],
+      "env": {
+        "SPOONACULAR_API_KEY": "your_spoonacular_api_key_here",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}

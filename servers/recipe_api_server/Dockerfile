@@ -17,9 +17,13 @@ RUN apt-get update && apt-get install -y \
 # Copy shared utilities first (for better caching)
 COPY shared/ ./shared/
 
+# Copy root requirements first
+COPY requirements.txt ./root-requirements.txt
+
 # Copy recipe server requirements and install dependencies
 COPY servers/recipe_api_server/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r root-requirements.txt && \
+    pip install --no-cache-dir beautifulsoup4>=4.12.0 lxml>=4.9.0
 
 # Copy recipe server source code
 COPY servers/recipe_api_server/src/ ./src/
